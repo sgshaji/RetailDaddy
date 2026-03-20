@@ -1,0 +1,56 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // User profiles
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && isShopAdmin(resource.data.shopId);
+    }
+
+    // Shop data - scoped per shop
+    match /shops/{shopId} {
+      allow read: if request.auth != null && isShopMember(shopId);
+      allow create: if request.auth != null;
+
+      // Products
+      match /products/{productId} {
+        allow read: if request.auth != null && isShopMember(shopId);
+        allow create, update: if request.auth != null && isShopMember(shopId);
+        allow delete: if request.auth != null && isShopAdmin(shopId);
+      }
+
+      // Sales
+      match /sales/{saleId} {
+        allow read: if request.auth != null && isShopMember(shopId);
+        allow create: if request.auth != null && isShopMember(shopId);
+        allow update: if request.auth != null && isShopAdmin(shopId);
+      }
+
+      // Inventory transactions
+      match /inventory_transactions/{txnId} {
+        allow read: if request.auth != null && isShopMember(shopId);
+        allow create: if request.auth != null && isShopMember(shopId);
+      }
+
+      // Daily summaries
+      match /daily_summaries/{dateId} {
+        allow read: if request.auth != null && isShopMember(shopId);
+        allow create, update: if request.auth != null && isShopMember(shopId);
+      }
+    }
+
+    // Helper: Check if user belongs to a shop
+    function isShopMember(shopId) {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId == shopId
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'staff'];
+    }
+
+    // Helper: Check if user is shop admin
+    function isShopAdmin(shopId) {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId == shopId
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+  }
+}

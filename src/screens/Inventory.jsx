@@ -53,7 +53,7 @@ export function Inventory() {
 
   return (
     <Layout title="Inventory">
-      <div className="flex flex-col h-[calc(100vh-120px)]">
+      <div className="flex flex-col h-[calc(100dvh-120px)]">
         {/* Filter Tabs */}
         <div className="p-4 bg-white border-b border-gray-200">
           <div className="flex gap-2">
@@ -159,6 +159,24 @@ export function Inventory() {
         isOpen={!!adjustingProduct}
         onClose={() => setAdjustingProduct(null)}
         title={`${adjustmentType === 'in' ? 'Add' : adjustmentType === 'out' ? 'Remove' : 'Adjust'} Stock`}
+        footer={
+          <div className="flex gap-3">
+            <Button
+              variant="secondary"
+              onClick={() => setAdjustingProduct(null)}
+              fullWidth
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleAdjustment}
+              fullWidth
+            >
+              Confirm
+            </Button>
+          </div>
+        }
       >
         {adjustingProduct && (
           <div className="space-y-4">
@@ -220,22 +238,6 @@ export function Inventory() {
               placeholder="e.g., New delivery, Damaged goods, etc."
             />
 
-            <div className="flex gap-3">
-              <Button
-                variant="secondary"
-                onClick={() => setAdjustingProduct(null)}
-                fullWidth
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleAdjustment}
-                fullWidth
-              >
-                Confirm
-              </Button>
-            </div>
           </div>
         )}
       </Modal>

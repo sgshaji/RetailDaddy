@@ -25,9 +25,9 @@ export function BottomNav() {
       label: 'Inventory'
     },
     {
-      path: '/insights',
-      icon: '📅',
-      label: 'Monthly'
+      path: '/admin',
+      icon: '👤',
+      label: 'Account'
     }
   ];
 

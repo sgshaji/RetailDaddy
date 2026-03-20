@@ -5,7 +5,11 @@ import { useDailySummary } from '../hooks/useDailySummary';
 import { useProducts } from '../hooks/useProducts';
 import { Card } from '../components/common/Card';
 import { formatDate } from '../utils/dateHelpers';
-import { getTodayDateString } from '../db/db';
+import { Link } from 'react-router-dom';
+
+function getTodayDateString() {
+  return new Date().toISOString().split('T')[0];
+}
 
 export function Dashboard() {
   const { todaySummary, topProducts } = useDailySummary();
@@ -65,6 +69,22 @@ export function Dashboard() {
             </Card>
           </div>
         ) : null}
+
+        {/* Monthly Insights Link */}
+        <div className="px-4 mt-4">
+          <Link to="/insights">
+            <Card className="flex items-center justify-between p-4">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">📅</span>
+                <div>
+                  <p className="font-bold text-gray-900">Monthly Insights</p>
+                  <p className="text-sm text-gray-500">View detailed sales analytics</p>
+                </div>
+              </div>
+              <span className="text-gray-400 text-xl">&rarr;</span>
+            </Card>
+          </Link>
+        </div>
       </div>
     </Layout>
   );

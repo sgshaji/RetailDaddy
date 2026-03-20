@@ -24,6 +24,9 @@ export default {
         'safe-bottom': 'env(safe-area-inset-bottom)',
         'safe-top': 'env(safe-area-inset-top)',
       },
+      padding: {
+        'nav': 'calc(60px + env(safe-area-inset-bottom, 0px))',
+      },
       minHeight: {
         'touch': '48px',
         'touch-large': '64px',

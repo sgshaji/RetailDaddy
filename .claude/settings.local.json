@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(npm install:*)",
+      "Bash(npx cap:*)",
+      "Bash(echo \"ANDROID_HOME=$ANDROID_HOME\")",
+      "Bash(echo \"ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT\")",
+      "Read(//c/Users/ssivaraman/Project-Repos/[Personal] Experiments And PoCs/retail-shop-pwa/$LOCALAPPDATA/Android/**)",
+      "Bash(export ANDROID_HOME=\"C:/Users/ssivaraman/AppData/Local/Android/Sdk\")",
+      "Bash(./gradlew assembleDebug)",
+      "Bash(export JAVA_HOME=\"C:/Program Files/Android/Android Studio/jbr\")",
+      "Bash(GIT_TERMINAL_PROMPT=1 git push origin main)"
+    ]
+  }
+}

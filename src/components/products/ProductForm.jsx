@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
 
-export function ProductForm({ product, onSave, onCancel }) {
+export function ProductForm({ product, onSave, onCancel, renderButtons }) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -150,14 +150,19 @@ export function ProductForm({ product, onSave, onCancel }) {
         placeholder="pieces, kg, liters, etc."
       />
 
-      <div className="flex gap-3 pt-4">
-        <Button type="button" variant="secondary" onClick={onCancel} fullWidth>
-          Cancel
-        </Button>
-        <Button type="submit" variant="primary" fullWidth>
-          {product ? 'Update' : 'Add'} Product
-        </Button>
-      </div>
+      {!renderButtons && (
+        <div className="flex gap-3 pt-4">
+          <Button type="button" variant="secondary" onClick={onCancel} fullWidth>
+            Cancel
+          </Button>
+          <Button type="submit" variant="primary" fullWidth>
+            {product ? 'Update' : 'Add'} Product
+          </Button>
+        </div>
+      )}
+
+      {/* Hidden submit button so form can be submitted from external footer */}
+      {renderButtons && <button type="submit" id="product-form-submit" className="hidden" />}
     </form>
   );
 }

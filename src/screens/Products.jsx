@@ -54,7 +54,7 @@ export function Products() {
 
   return (
     <Layout title="Products">
-      <div className="flex flex-col h-[calc(100vh-120px)]">
+      <div className="flex flex-col h-[calc(100dvh-120px)]">
         {/* Search and Filter */}
         <div className="p-4 bg-white border-b border-gray-200 space-y-3">
           <input
@@ -170,10 +170,21 @@ export function Products() {
         onClose={() => setShowAddModal(false)}
         title="Add New Product"
         size="large"
+        footer={
+          <div className="flex gap-3">
+            <Button variant="secondary" onClick={() => setShowAddModal(false)} fullWidth>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={() => document.getElementById('product-form-submit')?.click()} fullWidth>
+              Add Product
+            </Button>
+          </div>
+        }
       >
         <ProductForm
           onSave={handleAddProduct}
           onCancel={() => setShowAddModal(false)}
+          renderButtons
         />
       </Modal>
 
@@ -183,11 +194,22 @@ export function Products() {
         onClose={() => setEditingProduct(null)}
         title="Edit Product"
         size="large"
+        footer={
+          <div className="flex gap-3">
+            <Button variant="secondary" onClick={() => setEditingProduct(null)} fullWidth>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={() => document.getElementById('product-form-submit')?.click()} fullWidth>
+              Update Product
+            </Button>
+          </div>
+        }
       >
         <ProductForm
           product={editingProduct}
           onSave={handleUpdateProduct}
           onCancel={() => setEditingProduct(null)}
+          renderButtons
         />
       </Modal>
     </Layout>

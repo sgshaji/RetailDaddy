@@ -86,7 +86,7 @@ export function QuickSale() {
 
   return (
     <Layout title="Quick Sale">
-      <div className="flex flex-col h-[calc(100vh-120px)]">
+      <div className="flex flex-col h-[calc(100dvh-120px)]">
         {/* Product Selection */}
         <div className="p-4">
           <Button

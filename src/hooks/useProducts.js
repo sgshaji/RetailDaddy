@@ -1,96 +1,68 @@
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db/db';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import * as firestoreService from '../firebase/firestore';
 
 export function useProducts(filter = {}) {
-  const products = useLiveQuery(async () => {
-    let query = db.products.where('status').equals('active');
+  const { shopId } = useAuth();
+  const [allProducts, setAllProducts] = useState([]);
+
+  useEffect(() => {
+    if (!shopId) return;
+    const unsubscribe = firestoreService.subscribeProducts(shopId, setAllProducts);
+    return unsubscribe;
+  }, [shopId]);
+
+  // Apply client-side filters
+  const products = useMemo(() => {
+    let result = allProducts;
 
     if (filter.category && filter.category !== 'All') {
-      query = query.and(p => p.category === filter.category);
+      result = result.filter(p => p.category === filter.category);
     }
 
     if (filter.lowStock) {
-      query = query.and(p => p.current_stock <= p.low_stock_threshold);
+      result = result.filter(p => p.current_stock <= p.low_stock_threshold);
     }
 
     if (filter.search) {
       const searchLower = filter.search.toLowerCase();
-      query = query.and(p =>
+      result = result.filter(p =>
         p.name.toLowerCase().includes(searchLower) ||
         (p.barcode && p.barcode.toLowerCase().includes(searchLower))
       );
     }
 
-    const results = await query.toArray();
-    return results.sort((a, b) => a.name.localeCompare(b.name));
-  }, [filter.category, filter.lowStock, filter.search]);
+    return result;
+  }, [allProducts, filter.category, filter.lowStock, filter.search]);
 
-  const addProduct = async (product) => {
-    try {
-      const id = await db.products.add(product);
-      return id;
-    } catch (error) {
-      console.error('Error adding product:', error);
-      throw error;
-    }
-  };
+  const addProduct = useCallback(async (product) => {
+    if (!shopId) throw new Error('Not authenticated');
+    return firestoreService.addProduct(shopId, product);
+  }, [shopId]);
 
-  const updateProduct = async (id, changes) => {
-    try {
-      await db.products.update(id, changes);
-    } catch (error) {
-      console.error('Error updating product:', error);
-      throw error;
-    }
-  };
+  const updateProduct = useCallback(async (id, changes) => {
+    if (!shopId) throw new Error('Not authenticated');
+    return firestoreService.updateProduct(shopId, id, changes);
+  }, [shopId]);
 
-  const deleteProduct = async (id) => {
-    try {
-      // Soft delete
-      await db.products.update(id, {
-        status: 'inactive',
-        deleted_at: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('Error deleting product:', error);
-      throw error;
-    }
-  };
+  const deleteProduct = useCallback(async (id) => {
+    if (!shopId) throw new Error('Not authenticated');
+    return firestoreService.deleteProduct(shopId, id);
+  }, [shopId]);
 
-  const getProductById = async (id) => {
-    try {
-      return await db.products.get(id);
-    } catch (error) {
-      console.error('Error fetching product:', error);
-      throw error;
-    }
-  };
+  const getProductById = useCallback(async (id) => {
+    if (!shopId) return null;
+    return firestoreService.getProduct(shopId, id);
+  }, [shopId]);
 
-  const getProductByUuid = async (uuid) => {
-    try {
-      return await db.products.where('uuid').equals(uuid).first();
-    } catch (error) {
-      console.error('Error fetching product:', error);
-      throw error;
-    }
-  };
+  const lowStockProducts = useMemo(() => {
+    return allProducts.filter(p => p.current_stock <= p.low_stock_threshold);
+  }, [allProducts]);
 
-  const getLowStockProducts = useLiveQuery(async () => {
-    const products = await db.products
-      .where('status').equals('active')
-      .toArray();
-
-    return products.filter(p => p.current_stock <= p.low_stock_threshold);
-  }, []);
-
-  const getCategories = useLiveQuery(async () => {
-    const products = await db.products
-      .where('status').equals('active')
-      .toArray();
-
-    const categories = [...new Set(products.map(p => p.category))];
-    return categories.sort();
-  }, []);
+  const categories = useMemo(() => {
+    const cats = [...new Set(allProducts.map(p => p.category))];
+    return cats.sort();
+  }, [allProducts]);
 
   return {
     products,
@@ -98,8 +70,7 @@ export function useProducts(filter = {}) {
     updateProduct,
     deleteProduct,
     getProductById,
-    getProductByUuid,
-    lowStockProducts: getLowStockProducts,
-    categories: getCategories
+    lowStockProducts,
+    categories
   };
 }
