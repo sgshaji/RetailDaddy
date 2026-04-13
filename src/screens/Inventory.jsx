@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Plus, AlertTriangle, Package, TrendingDown, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Plus, TriangleAlert as AlertTriangle, Package, TrendingDown, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Layout } from '../components/layout/Layout';
 import { ProductCard } from '../components/inventory/ProductCard';
@@ -18,7 +18,7 @@ function HealthBar({ healthy, low, out, total }) {
   const lPct = (low / total) * 100;
   const oPct = (out / total) * 100;
   return (
-    <div className="flex rounded-full h-2.5 overflow-hidden bg-gray-100">
+    <div className="flex rounded-full h-2 overflow-hidden bg-gray-100">
       {hPct > 0 && <div className="bg-emerald-500 transition-all" style={{ width: `${hPct}%` }} />}
       {lPct > 0 && <div className="bg-amber-400 transition-all" style={{ width: `${lPct}%` }} />}
       {oPct > 0 && <div className="bg-red-400 transition-all" style={{ width: `${oPct}%` }} />}
@@ -28,25 +28,39 @@ function HealthBar({ healthy, low, out, total }) {
 
 function CollapsibleSection({ title, icon, count, severity, defaultOpen, children }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
-  const colors = {
-    critical: 'text-red-600 bg-red-50',
-    warning: 'text-amber-700 bg-amber-50',
-    info: 'text-blue-600 bg-blue-50',
+  const styles = {
+    critical: { badge: 'bg-red-100 text-red-600', icon: 'bg-red-100 text-red-600', header: 'text-red-700' },
+    warning: { badge: 'bg-amber-100 text-amber-700', icon: 'bg-amber-100 text-amber-700', header: 'text-amber-800' },
+    info: { badge: 'bg-sky-100 text-sky-600', icon: 'bg-sky-100 text-sky-600', header: 'text-sky-700' },
   };
+  const s = styles[severity];
   return (
-    <div className="mb-4">
-      <button onClick={() => setIsOpen(!isOpen)} className="w-full flex items-center justify-between px-5 py-2">
-        <div className="flex items-center gap-2">
-          <span className={`w-7 h-7 rounded-lg flex items-center justify-center ${colors[severity]}`}>{icon}</span>
-          <span className="text-sm font-semibold text-gray-900">{title}</span>
-          <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${colors[severity]}`}>{count}</span>
+    <div className="mb-2">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between px-5 py-3 active:bg-gray-50 transition-colors"
+      >
+        <div className="flex items-center gap-2.5">
+          <span className={`w-7 h-7 rounded-xl flex items-center justify-center ${s.icon}`}>{icon}</span>
+          <span className={`text-sm font-semibold ${s.header}`}>{title}</span>
+          <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${s.badge}`}>{count}</span>
         </div>
-        {isOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+        <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${isOpen ? 'bg-gray-100' : 'bg-gray-50'}`}>
+          {isOpen
+            ? <ChevronUp className="w-3.5 h-3.5 text-gray-500" />
+            : <ChevronDown className="w-3.5 h-3.5 text-gray-500" />}
+        </div>
       </button>
       <AnimatePresence>
         {isOpen && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-            <div className="px-5 space-y-2 pb-2">{children}</div>
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-5 space-y-2 pb-3">{children}</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -62,7 +76,6 @@ export function Inventory() {
   const { sales } = useSales();
   const { showToast } = useToast();
 
-  // Calculate velocities
   const velocities = useMemo(() => {
     const now = new Date();
     const thirtyDaysAgo = new Date(now); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -74,7 +87,6 @@ export function Inventory() {
     return result;
   }, [sales]);
 
-  // Smart sections
   const outOfStock = allProducts.filter(p => p.current_stock === 0);
   const reorderNow = allProducts.filter(p => {
     const v = velocities[p.id] || 0;
@@ -88,7 +100,6 @@ export function Inventory() {
     return allProducts.filter(p => !recentProductIds.has(p.id) && p.current_stock > 0);
   }, [allProducts, sales]);
 
-  // Categories
   const categories = useMemo(() => {
     const cats = [...new Set(allProducts.map(p => p.category).filter(Boolean))].sort();
     return ['All', ...cats];
@@ -102,9 +113,9 @@ export function Inventory() {
     return result;
   }, [products, selectedCategory]);
 
-  // Inventory value
   const totalValue = allProducts.reduce((s, p) => s + p.price * p.current_stock, 0);
   const healthyCount = allProducts.filter(p => p.current_stock > p.low_stock_threshold).length;
+  const alertCount = outOfStock.length + reorderNow.length;
 
   const handleAddProduct = async (product) => {
     try { await addProduct(product); showToast('Product added!', 'success'); }
@@ -118,64 +129,69 @@ export function Inventory() {
 
   return (
     <Layout>
-      <div className="pb-24">
-        <div className="px-5 pt-8 pb-2 flex items-start justify-between">
+      <div className="pb-28">
+        {/* Header */}
+        <div className="px-5 pt-10 pb-4 flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-amber-900">Inventory</h1>
-            <p className="text-sm text-gray-400 mt-0.5">{allProducts.length} items &bull; {formatCurrency(totalValue)} total value</p>
+            <h1 className="text-2xl font-bold text-gray-900">Inventory</h1>
+            <p className="text-sm text-gray-400 mt-0.5">
+              {allProducts.length} items &bull; {formatCurrency(totalValue)} value
+            </p>
           </div>
-          <button onClick={() => setIsAddModalOpen(true)} className="w-11 h-11 flex items-center justify-center bg-amber-700 text-white rounded-xl hover:bg-amber-800 transition-colors shadow-md active:scale-95">
-            <Plus className="w-5 h-5" />
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-1.5 bg-amber-700 text-white px-4 py-2.5 rounded-2xl hover:bg-amber-800 transition-colors shadow-sm active:scale-95 text-sm font-semibold"
+          >
+            <Plus className="w-4 h-4" />
+            Add
           </button>
         </div>
 
         {/* Health Bar */}
         {allProducts.length > 0 && (
-          <div className="px-5 mt-4">
+          <div className="px-5 mb-5">
             <HealthBar healthy={healthyCount} low={lowStockProducts.length} out={outOfStock.length} total={allProducts.length} />
             <div className="flex justify-between mt-2 text-xs text-gray-500">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" />{healthyCount} healthy</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" />{lowStockProducts.length} low</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400" />{outOfStock.length} out</span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                {healthyCount} healthy
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-amber-400" />
+                {lowStockProducts.length} low
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-red-400" />
+                {outOfStock.length} out
+              </span>
             </div>
           </div>
         )}
 
-        {/* Smart Sections */}
-        <div className="mt-4">
-          {outOfStock.length > 0 && (
-            <CollapsibleSection title="Out of Stock" icon={<AlertTriangle className="w-4 h-4" />} count={outOfStock.length} severity="critical" defaultOpen>
-              {outOfStock.map((p, i) => (
-                <ProductCard key={p.id} product={p} index={i} onUpdateStock={handleUpdateStock} velocity={velocities[p.id]} />
-              ))}
-            </CollapsibleSection>
-          )}
-          {reorderNow.length > 0 && (
-            <CollapsibleSection title="Reorder Soon" icon={<Package className="w-4 h-4" />} count={reorderNow.length} severity="warning" defaultOpen={outOfStock.length === 0}>
-              {reorderNow.map((p, i) => (
-                <ProductCard key={p.id} product={p} index={i} onUpdateStock={handleUpdateStock} velocity={velocities[p.id]} />
-              ))}
-            </CollapsibleSection>
-          )}
-          {deadStock.length > 0 && (
-            <CollapsibleSection title="Slow Movers (30+ days)" icon={<TrendingDown className="w-4 h-4" />} count={deadStock.length} severity="info" defaultOpen={false}>
-              {deadStock.map((p, i) => (
-                <ProductCard key={p.id} product={p} index={i} onUpdateStock={handleUpdateStock} velocity={0} />
-              ))}
-            </CollapsibleSection>
-          )}
-        </div>
-
         {/* Search + Category Filter */}
-        <div className="px-5 mt-2 space-y-3">
+        <div className="px-5 mb-4 space-y-3">
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input type="text" placeholder="Search products..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-sm"
+            />
           </div>
           {categories.length > 2 && (
             <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1">
               {categories.map(cat => (
-                <button key={cat} onClick={() => setSelectedCategory(cat)} className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${selectedCategory === cat ? 'bg-amber-700 text-white' : 'bg-white border border-gray-200 text-gray-600'}`}>
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+                    selectedCategory === cat
+                      ? 'bg-amber-700 text-white shadow-sm'
+                      : 'bg-white border border-gray-200 text-gray-500 hover:border-amber-300'
+                  }`}
+                >
                   {cat}
                 </button>
               ))}
@@ -183,25 +199,95 @@ export function Inventory() {
           )}
         </div>
 
+        {/* Smart Sections */}
+        {(outOfStock.length > 0 || reorderNow.length > 0 || deadStock.length > 0) && (
+          <div className="mb-2">
+            <div className="px-5 mb-2">
+              <div className="flex items-center gap-2">
+                <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Attention Needed</h2>
+                {alertCount > 0 && (
+                  <span className="text-[10px] font-bold bg-red-500 text-white px-1.5 py-0.5 rounded-full">{alertCount}</span>
+                )}
+              </div>
+            </div>
+            <div className="bg-white border-y border-gray-100 shadow-sm">
+              {outOfStock.length > 0 && (
+                <CollapsibleSection
+                  title="Out of Stock"
+                  icon={<AlertTriangle className="w-3.5 h-3.5" />}
+                  count={outOfStock.length}
+                  severity="critical"
+                  defaultOpen
+                >
+                  {outOfStock.map((p, i) => (
+                    <ProductCard key={p.id} product={p} index={i} onUpdateStock={handleUpdateStock} velocity={velocities[p.id]} />
+                  ))}
+                </CollapsibleSection>
+              )}
+              {reorderNow.length > 0 && (
+                <CollapsibleSection
+                  title="Reorder Soon"
+                  icon={<Package className="w-3.5 h-3.5" />}
+                  count={reorderNow.length}
+                  severity="warning"
+                  defaultOpen={outOfStock.length === 0}
+                >
+                  {reorderNow.map((p, i) => (
+                    <ProductCard key={p.id} product={p} index={i} onUpdateStock={handleUpdateStock} velocity={velocities[p.id]} />
+                  ))}
+                </CollapsibleSection>
+              )}
+              {deadStock.length > 0 && (
+                <CollapsibleSection
+                  title="Slow Movers"
+                  icon={<TrendingDown className="w-3.5 h-3.5" />}
+                  count={deadStock.length}
+                  severity="info"
+                  defaultOpen={false}
+                >
+                  {deadStock.map((p, i) => (
+                    <ProductCard key={p.id} product={p} index={i} onUpdateStock={handleUpdateStock} velocity={0} />
+                  ))}
+                </CollapsibleSection>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* All Products */}
-        <div className="px-5 mt-4">
-          <h2 className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-3">
+        <div className="px-5 mt-5">
+          <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
             {selectedCategory === 'All' ? 'All Products' : selectedCategory}
+            <span className="ml-2 font-semibold text-gray-400 normal-case tracking-normal">({displayProducts.length})</span>
           </h2>
           <div className="space-y-2">
             {displayProducts.map((product, index) => (
-              <ProductCard key={product.id} product={product} index={index} onUpdateStock={handleUpdateStock} velocity={velocities[product.id]} />
+              <ProductCard
+                key={product.id}
+                product={product}
+                index={index}
+                onUpdateStock={handleUpdateStock}
+                velocity={velocities[product.id]}
+              />
             ))}
           </div>
           {displayProducts.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-sm text-gray-400">{allProducts.length === 0 ? 'Your shelves are bare — add your first creation!' : 'No products match your search'}</p>
+            <div className="text-center py-12">
+              <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <Package className="w-6 h-6 text-gray-400" />
+              </div>
+              <p className="text-sm font-medium text-gray-500">
+                {allProducts.length === 0 ? 'No products yet' : 'No products match your search'}
+              </p>
+              {allProducts.length === 0 && (
+                <p className="text-xs text-gray-400 mt-1">Tap "Add" to create your first product</p>
+              )}
             </div>
           )}
         </div>
-
-        <AddItemModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onAdd={handleAddProduct} />
       </div>
+
+      <AddItemModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onAdd={handleAddProduct} />
     </Layout>
   );
 }

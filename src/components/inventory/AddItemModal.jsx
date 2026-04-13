@@ -1,73 +1,143 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, Package } from 'lucide-react';
+
+const PRESET_CATEGORIES = ['General', 'Coffee', 'Tea', 'Equipment', 'Accessories', 'Pottery', 'Ceramics', 'Gifts'];
 
 export function AddItemModal({ isOpen, onClose, onAdd }) {
-  const [formData, setFormData] = useState({ name: '', sku: '', stock: '', price: '', cost_price: '', category: 'General', lowStockThreshold: '' });
+  const [formData, setFormData] = useState({
+    name: '', sku: '', stock: '', price: '', cost_price: '', category: 'General', lowStockThreshold: '',
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const update = (field) => (e) => setFormData((prev) => ({ ...prev, [field]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await onAdd({
-      name: formData.name, sku: formData.sku,
-      current_stock: parseInt(formData.stock), price: parseFloat(formData.price),
-      cost_price: parseFloat(formData.cost_price) || 0, category: formData.category,
-      low_stock_threshold: parseInt(formData.lowStockThreshold) || 10,
-    });
-    setFormData({ name: '', sku: '', stock: '', price: '', cost_price: '', category: 'General', lowStockThreshold: '' });
-    onClose();
+    setIsSubmitting(true);
+    try {
+      await onAdd({
+        name: formData.name,
+        sku: formData.sku,
+        current_stock: parseInt(formData.stock),
+        price: parseFloat(formData.price),
+        cost_price: parseFloat(formData.cost_price) || 0,
+        category: formData.category,
+        low_stock_threshold: parseInt(formData.lowStockThreshold) || 10,
+      });
+      setFormData({ name: '', sku: '', stock: '', price: '', cost_price: '', category: 'General', lowStockThreshold: '' });
+      onClose();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  const inputClass = "w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-gray-50 focus:bg-white transition-colors";
 
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
-          <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 300 }} className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-50 max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-5 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Add New Item</h2>
-              <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"><X className="w-5 h-5" /></button>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-40"
+            onClick={onClose}
+          />
+          <motion.div
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+            className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-50 max-h-[92vh] overflow-y-auto"
+          >
+            <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center">
+                  <Package className="w-4 h-4 text-amber-700" />
+                </div>
+                <h2 className="text-lg font-bold text-gray-900">Add New Product</h2>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
+
             <form onSubmit={handleSubmit} className="p-5 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Product Name</label>
-                <input type="text" value={formData.name} onChange={update('name')} placeholder="Enter product name" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500" required />
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Product Name *</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={update('name')}
+                  placeholder="e.g. Handmade Mug"
+                  className={inputClass}
+                  required
+                />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">SKU</label>
-                  <input type="text" value={formData.sku} onChange={update('sku')} placeholder="ABC-001" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">SKU</label>
+                  <input type="text" value={formData.sku} onChange={update('sku')} placeholder="MUG-001" className={inputClass} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                  <select value={formData.category} onChange={update('category')} className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500">
-                    <option value="General">General</option><option value="Coffee">Coffee</option><option value="Tea">Tea</option><option value="Equipment">Equipment</option><option value="Accessories">Accessories</option>
-                  </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Selling Price (₹)</label>
-                  <input type="number" step="0.01" value={formData.price} onChange={update('price')} placeholder="0.00" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500" required />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Cost Price (₹)</label>
-                  <input type="number" step="0.01" value={formData.cost_price} onChange={update('cost_price')} placeholder="0.00" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Initial Stock</label>
-                  <input type="number" value={formData.stock} onChange={update('stock')} placeholder="0" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500" required />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Low Stock Alert</label>
-                  <input type="number" value={formData.lowStockThreshold} onChange={update('lowStockThreshold')} placeholder="10" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Category</label>
+                  <input
+                    type="text"
+                    list="add-item-categories"
+                    value={formData.category}
+                    onChange={update('category')}
+                    placeholder="General"
+                    className={inputClass}
+                  />
+                  <datalist id="add-item-categories">
+                    {PRESET_CATEGORIES.map(c => <option key={c} value={c} />)}
+                  </datalist>
                 </div>
               </div>
-              <div className="flex gap-3 pt-4">
-                <button type="button" onClick={onClose} className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors">Cancel</button>
-                <button type="submit" className="flex-1 py-3 rounded-xl bg-amber-700 text-white font-semibold hover:bg-amber-800 transition-colors">Add Item</button>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Selling Price (₹) *</label>
+                  <input type="number" step="0.01" min="0" value={formData.price} onChange={update('price')} placeholder="0.00" className={inputClass} required />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Cost Price (₹)</label>
+                  <input type="number" step="0.01" min="0" value={formData.cost_price} onChange={update('cost_price')} placeholder="0.00" className={inputClass} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Initial Stock *</label>
+                  <input type="number" min="0" value={formData.stock} onChange={update('stock')} placeholder="0" className={inputClass} required />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Low Stock Alert</label>
+                  <input type="number" min="0" value={formData.lowStockThreshold} onChange={update('lowStockThreshold')} placeholder="10" className={inputClass} />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 py-3.5 rounded-2xl border border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition-colors active:scale-[0.98]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 py-3.5 rounded-2xl bg-amber-700 text-white font-semibold text-sm hover:bg-amber-800 transition-colors active:scale-[0.98] disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Adding...' : 'Add Product'}
+                </button>
               </div>
             </form>
           </motion.div>

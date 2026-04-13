@@ -1,12 +1,11 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown, ShoppingBag, DollarSign, Receipt, Tag } from 'lucide-react';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Layout } from '../components/layout/Layout';
 import { useSales } from '../hooks/useSales';
 
 const DAY_NAMES_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function formatCurrency(amount) {
   return `₹${Number(amount).toLocaleString('en-IN')}`;
@@ -17,23 +16,40 @@ function pct(cur, prev) {
   return ((cur - prev) / prev) * 100;
 }
 
-function SummaryCard({ icon, label, value, change }) {
+function Trend({ change }) {
+  if (change === null) return null;
   const isPositive = change >= 0;
   return (
-    <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
-      <div className="flex items-center gap-2 mb-2">
-        <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-700">{icon}</div>
+    <span className={`inline-flex items-center gap-0.5 text-xs font-semibold ${isPositive ? 'text-emerald-600' : 'text-red-500'}`}>
+      {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+      {Math.abs(change).toFixed(0)}%
+    </span>
+  );
+}
+
+function SummaryCard({ icon, label, value, change }) {
+  return (
+    <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+      <div className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center text-amber-700 mb-3">
+        {icon}
       </div>
-      <p className="text-xl font-bold text-gray-900 tabular-nums">{value}</p>
-      <div className="flex items-center justify-between mt-1">
+      <p className="text-xl font-bold text-gray-900 tabular-nums leading-tight">{value}</p>
+      <div className="flex items-center justify-between mt-1.5">
         <p className="text-xs text-gray-500">{label}</p>
-        {change !== null && (
-          <span className={`text-xs font-medium flex items-center gap-0.5 ${isPositive ? 'text-emerald-600' : 'text-red-500'}`}>
-            {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-            {Math.abs(change).toFixed(0)}%
-          </span>
-        )}
+        <Trend change={change} />
       </div>
+    </div>
+  );
+}
+
+function EmptyState({ message }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12">
+      <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mb-3">
+        <ShoppingBag className="w-6 h-6 text-gray-400" />
+      </div>
+      <p className="text-sm font-medium text-gray-500">{message}</p>
+      <p className="text-xs text-gray-400 mt-1">Record some sales to see insights</p>
     </div>
   );
 }
@@ -52,10 +68,9 @@ export function SalesInsights() {
       filtered = sales.filter(s => new Date(s.created_at).toDateString() === now.toDateString());
       const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1);
       prevFiltered = sales.filter(s => new Date(s.created_at).toDateString() === yesterday.toDateString());
-      // Hourly chart
-      const hours = Array.from({ length: 24 }, (_, i) => ({ label: `${i}:00`, sales: 0, profit: 0 }));
+      const hours = Array.from({ length: 24 }, (_, i) => ({ label: `${i}`, sales: 0, profit: 0 }));
       filtered.forEach(s => { const h = new Date(s.created_at).getHours(); hours[h].sales += Number(s.total_amount); hours[h].profit += Number(s.profit); });
-      chartData = hours.filter((_, i) => i >= 8 && i <= 21); // Business hours
+      chartData = hours.filter((_, i) => i >= 8 && i <= 21);
     } else if (period === 'week') {
       const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay()); weekStart.setHours(0, 0, 0, 0);
       const prevWeekStart = new Date(weekStart); prevWeekStart.setDate(prevWeekStart.getDate() - 7);
@@ -88,7 +103,6 @@ export function SalesInsights() {
     const avgTransaction = transactions > 0 ? revenue / transactions : 0;
     const prevAvgTransaction = prevTransactions > 0 ? prevRevenue / prevTransactions : 0;
 
-    // Best sellers
     const productMap = {};
     filtered.forEach(s => {
       if (!productMap[s.product_name]) productMap[s.product_name] = { name: s.product_name, sold: 0, revenue: 0, profit: 0 };
@@ -98,13 +112,15 @@ export function SalesInsights() {
     });
     const bestSellers = Object.values(productMap).sort((a, b) => b.revenue - a.revenue).slice(0, 10);
 
-    // Busiest day pattern (from all sales)
     const dayTotals = [0, 0, 0, 0, 0, 0, 0];
     const dayCount = [0, 0, 0, 0, 0, 0, 0];
     sales.forEach(s => { const d = new Date(s.created_at).getDay(); dayTotals[d] += Number(s.total_amount); dayCount[d]++; });
-    const dayAvgs = dayTotals.map((t, i) => ({ day: DAY_NAMES_SHORT[i], dayFull: ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][i], avg: dayCount[i] > 0 ? t / Math.max(1, Math.ceil(sales.length > 0 ? 30 / 7 : 1)) : 0 }));
+    const dayAvgs = dayTotals.map((t, i) => ({
+      day: DAY_NAMES_SHORT[i],
+      dayFull: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][i],
+      avg: dayCount[i] > 0 ? t / Math.max(1, Math.ceil(sales.length > 0 ? 30 / 7 : 1)) : 0,
+    }));
     const busiestDay = dayAvgs.reduce((b, d) => d.avg > b.avg ? d : b, dayAvgs[0]);
-
     const margin = revenue > 0 ? (profit / revenue * 100).toFixed(1) : '0.0';
 
     return {
@@ -114,6 +130,7 @@ export function SalesInsights() {
       transactionChange: pct(transactions, prevTransactions),
       avgTransactionChange: pct(avgTransaction, prevAvgTransaction),
       bestSellers, chartData, busiestDay, dayAvgs,
+      hasData: filtered.length > 0,
     };
   }, [sales, period]);
 
@@ -121,133 +138,178 @@ export function SalesInsights() {
 
   return (
     <Layout>
-      <div className="pb-24">
-        <div className="px-5 pt-8 pb-2">
-          <h1 className="text-2xl font-bold text-amber-900">Sales Insights</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Understand your business</p>
+      <div className="pb-28">
+        {/* Header */}
+        <div className="px-5 pt-10 pb-5">
+          <h1 className="text-2xl font-bold text-gray-900">Sales Insights</h1>
+          <p className="text-sm text-gray-400 mt-0.5">Understand your business performance</p>
         </div>
 
         {/* Period Selector */}
-        <div className="px-5 mt-4">
-          <div className="flex gap-1 bg-amber-100/50 p-1 rounded-xl">
+        <div className="px-5 mb-5">
+          <div className="flex gap-1 bg-gray-100 p-1 rounded-2xl">
             {['today', 'week', 'month'].map(p => (
-              <button key={p} onClick={() => setPeriod(p)} className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${period === p ? 'bg-white text-amber-800 shadow-sm' : 'text-amber-700/60'}`}>
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`flex-1 py-2 px-3 rounded-xl text-sm font-semibold transition-all ${
+                  period === p
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
                 {periodLabels[p]}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Summary Cards */}
-        <div className="px-5 mt-4 grid grid-cols-2 gap-3">
-          <SummaryCard icon={<DollarSign className="w-4 h-4" />} label="Revenue" value={formatCurrency(stats.revenue)} change={stats.revenueChange} />
-          <SummaryCard icon={<TrendingUp className="w-4 h-4" />} label={`Profit (${stats.margin}%)`} value={formatCurrency(stats.profit)} change={stats.profitChange} />
-          <SummaryCard icon={<Receipt className="w-4 h-4" />} label="Transactions" value={String(stats.transactions)} change={stats.transactionChange} />
-          <SummaryCard icon={<Tag className="w-4 h-4" />} label="Avg. Transaction" value={formatCurrency(stats.avgTransaction)} change={stats.avgTransactionChange} />
-        </div>
-
-        {/* Revenue Chart */}
-        {stats.chartData.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="px-5 mt-6">
-            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-              <h2 className="text-sm font-semibold text-gray-900 mb-4">Revenue &amp; Profit</h2>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={stats.chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f4" />
-                  <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="#a8a29e" />
-                  <YAxis tick={{ fontSize: 11 }} stroke="#a8a29e" />
-                  <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e7e5e4', borderRadius: '8px', fontSize: '12px' }} formatter={(v) => [`₹${Number(v).toLocaleString('en-IN')}`, '']} />
-                  <Bar dataKey="sales" fill="#d97706" radius={[6, 6, 0, 0]} name="Revenue" />
-                  <Bar dataKey="profit" fill="#059669" radius={[6, 6, 0, 0]} name="Profit" />
-                </BarChart>
-              </ResponsiveContainer>
+        {!stats.hasData ? (
+          <EmptyState message={`No sales data for ${periodLabels[period].toLowerCase()}`} />
+        ) : (
+          <>
+            {/* Summary Cards */}
+            <div className="px-5 grid grid-cols-2 gap-3 mb-6">
+              <SummaryCard
+                icon={<DollarSign className="w-4 h-4" />}
+                label="Revenue"
+                value={formatCurrency(stats.revenue)}
+                change={stats.revenueChange}
+              />
+              <SummaryCard
+                icon={<TrendingUp className="w-4 h-4" />}
+                label={`Profit · ${stats.margin}%`}
+                value={formatCurrency(stats.profit)}
+                change={stats.profitChange}
+              />
+              <SummaryCard
+                icon={<Receipt className="w-4 h-4" />}
+                label="Transactions"
+                value={String(stats.transactions)}
+                change={stats.transactionChange}
+              />
+              <SummaryCard
+                icon={<Tag className="w-4 h-4" />}
+                label="Avg. Sale"
+                value={formatCurrency(stats.avgTransaction)}
+                change={stats.avgTransactionChange}
+              />
             </div>
-          </motion.div>
-        )}
 
-        {/* Sales Patterns */}
-        <div className="px-5 mt-6">
-          <h2 className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-3">Sales Patterns</h2>
-          <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-700 text-sm">📅</div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">Busiest day: {stats.busiestDay.dayFull}</p>
-                <p className="text-xs text-gray-500">Avg. {formatCurrency(stats.busiestDay.avg)} revenue</p>
+            {/* Revenue Chart */}
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="px-5 mb-6">
+              <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-sm font-bold text-gray-900">Revenue &amp; Profit</h2>
+                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                    <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-amber-500" />Rev</span>
+                    <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-500" />Profit</span>
+                  </div>
+                </div>
+                <ResponsiveContainer width="100%" height={180}>
+                  <BarChart data={stats.chartData} barGap={2}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+                    <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} width={40} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#fff', border: '1px solid #f3f4f6', borderRadius: '12px', fontSize: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                      formatter={(v) => [`₹${Number(v).toLocaleString('en-IN')}`, '']}
+                      cursor={{ fill: '#f9fafb' }}
+                    />
+                    <Bar dataKey="sales" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Revenue" maxBarSize={28} />
+                    <Bar dataKey="profit" fill="#10b981" radius={[4, 4, 0, 0]} name="Profit" maxBarSize={28} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-            </div>
-            {stats.avgTransaction > 0 && (
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-700 text-sm">🏷️</div>
+            </motion.div>
+
+            {/* Sales Patterns */}
+            <div className="px-5 mb-6">
+              <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Sales Patterns</h2>
+              <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center text-amber-700">
+                    <TrendingUp className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">Busiest day: {stats.busiestDay.dayFull}</p>
+                    <p className="text-xs text-gray-400">Avg. {formatCurrency(stats.busiestDay.avg)} revenue</p>
+                  </div>
+                </div>
+
                 <div>
-                  <p className="text-sm font-medium text-gray-900">Avg. transaction: {formatCurrency(stats.avgTransaction)}</p>
-                  <p className="text-xs text-gray-500">{stats.avgTransactionChange >= 0 ? 'Up' : 'Down'} {Math.abs(stats.avgTransactionChange).toFixed(0)}% vs previous period</p>
+                  <p className="text-xs text-gray-400 mb-2">Revenue by day of week</p>
+                  <div className="flex gap-1.5">
+                    {stats.dayAvgs.map(d => {
+                      const maxAvg = Math.max(...stats.dayAvgs.map(x => x.avg), 1);
+                      const intensity = d.avg / maxAvg;
+                      const isBusiest = d.day === stats.busiestDay.day;
+                      return (
+                        <div key={d.day} className="flex-1 text-center">
+                          <div
+                            className={`h-9 rounded-lg transition-all ${isBusiest ? 'ring-2 ring-amber-500/40' : ''}`}
+                            style={{ backgroundColor: `rgba(217, 119, 6, ${Math.max(intensity * 0.85, 0.06)})` }}
+                          />
+                          <p className={`text-[10px] mt-1 font-medium ${isBusiest ? 'text-amber-700' : 'text-gray-400'}`}>
+                            {d.day}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
-            )}
-            {/* Day of week heatmap */}
-            <div className="pt-2">
-              <p className="text-xs text-gray-400 mb-2">Revenue by day of week</p>
-              <div className="flex gap-1">
-                {stats.dayAvgs.map(d => {
-                  const maxAvg = Math.max(...stats.dayAvgs.map(x => x.avg), 1);
-                  const intensity = d.avg / maxAvg;
-                  return (
-                    <div key={d.day} className="flex-1 text-center">
-                      <div className="h-8 rounded-md transition-all" style={{ backgroundColor: `rgba(217, 119, 6, ${Math.max(intensity * 0.8, 0.05)})` }} />
-                      <p className="text-[10px] text-gray-400 mt-1">{d.day}</p>
-                    </div>
-                  );
-                })}
-              </div>
             </div>
-          </div>
-        </div>
 
-        {/* Best Sellers */}
-        <div className="px-5 mt-6">
-          <h2 className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-3">Best Sellers — {periodLabels[period]}</h2>
-          {stats.bestSellers.length > 0 ? (
-            <div className="space-y-2">
-              {stats.bestSellers.map((product, index) => {
-                const maxSold = stats.bestSellers[0]?.sold || 1;
-                const margin = product.revenue > 0 ? ((product.profit / product.revenue) * 100).toFixed(0) : 0;
-                return (
-                  <motion.div
-                    key={product.name}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm"
-                  >
-                    <div className="flex items-start gap-3">
-                      <span className="text-xs font-bold text-amber-700 bg-amber-50 w-6 h-6 rounded-lg flex items-center justify-center shrink-0">
-                        {index + 1}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm font-semibold text-gray-900 truncate">{product.name}</p>
-                          <p className="text-sm font-bold text-gray-900 ml-2">{formatCurrency(product.revenue)}</p>
+            {/* Best Sellers */}
+            <div className="px-5">
+              <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
+                Best Sellers — {periodLabels[period]}
+              </h2>
+              {stats.bestSellers.length > 0 ? (
+                <div className="space-y-2">
+                  {stats.bestSellers.map((product, index) => {
+                    const maxSold = stats.bestSellers[0]?.sold || 1;
+                    const margin = product.revenue > 0 ? ((product.profit / product.revenue) * 100).toFixed(0) : 0;
+                    return (
+                      <motion.div
+                        key={product.name}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.04 }}
+                        className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs font-bold text-amber-700 bg-amber-50 w-7 h-7 rounded-xl flex items-center justify-center shrink-0">
+                            {index + 1}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <p className="text-sm font-semibold text-gray-900 truncate mr-2">{product.name}</p>
+                              <p className="text-sm font-bold text-gray-900 shrink-0">{formatCurrency(product.revenue)}</p>
+                            </div>
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-xs text-gray-400">{product.sold} sold</p>
+                              <p className="text-xs font-semibold text-emerald-600">{margin}% margin</p>
+                            </div>
+                            <div className="w-full bg-gray-100 rounded-full h-1">
+                              <div
+                                className="bg-amber-400 h-1 rounded-full"
+                                style={{ width: `${(product.sold / maxSold) * 100}%` }}
+                              />
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between mt-1">
-                          <p className="text-xs text-gray-500">{product.sold} sold</p>
-                          <p className="text-xs text-emerald-600 font-medium">{margin}% margin</p>
-                        </div>
-                        <div className="w-full bg-gray-100 rounded-full h-1.5 mt-2">
-                          <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: `${(product.sold / maxSold) * 100}%` }} />
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <EmptyState message="No sales data for this period" />
+              )}
             </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-sm text-gray-400">No sales data for this period</p>
-            </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
     </Layout>
   );
