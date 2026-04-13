@@ -1,9 +1,9 @@
 {
-  "appId": "com.counterbook.app",
-  "appName": "CounterBook",
+  "appId": "com.artisanspottery.app",
+  "appName": "Artisans Pottery",
   "webDir": "dist",
   "android": {
-    "backgroundColor": "#f3f4f6",
+    "backgroundColor": "#fffbeb",
     "allowMixedContent": false
   },
   "plugins": {
@@ -13,7 +13,7 @@
     },
     "StatusBar": {
       "style": "LIGHT",
-      "backgroundColor": "#047857"
+      "backgroundColor": "#b45309"
     }
   }
 }
