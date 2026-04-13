@@ -10,10 +10,10 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'icons/*.png'],
       manifest: {
-        name: 'CounterBook',
-        short_name: 'CounterBook',
-        description: 'Your digital billing counter ledger — track sales, inventory, and profits on the go',
-        theme_color: '#10b981',
+        name: 'Retail Manager',
+        short_name: 'Retail Manager',
+        description: 'Track inventory and sales for your retail shop',
+        theme_color: '#2563eb',
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
@@ -33,16 +33,7 @@ export default defineConfig({
             purpose: 'any maskable'
           }
         ],
-        categories: ['business', 'productivity', 'utilities'],
-        shortcuts: [
-          {
-            name: 'Quick Sale',
-            short_name: 'Sale',
-            description: 'Record a new sale',
-            url: '/quick-sale',
-            icons: [{ src: 'icons/icon-96x96.png', sizes: '96x96' }]
-          }
-        ]
+        categories: ['business', 'productivity', 'utilities']
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
