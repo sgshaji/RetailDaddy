@@ -33,14 +33,14 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 flex items-center justify-center p-5">
+    <div className="min-h-screen bg-gradient-to-br from-amber-700 via-amber-800 to-orange-900 flex items-center justify-center p-5">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
         <div className="text-center mb-8">
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', delay: 0.2 }} className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Store className="w-8 h-8 text-blue-600" />
+            <Store className="w-8 h-8 text-amber-700" />
           </motion.div>
-          <h1 className="text-3xl font-bold text-white mb-2">Retail Manager</h1>
-          <p className="text-blue-100">Track inventory and sales</p>
+          <h1 className="text-3xl font-bold text-white mb-2">Artisans Pottery</h1>
+          <p className="text-amber-200">Handcrafted with care</p>
         </div>
         <div className="bg-white rounded-3xl p-8 shadow-2xl">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Welcome back</h2>
@@ -52,21 +52,21 @@ export function Login() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500" required />
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" className="w-full pl-12 pr-12 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" className="w-full pl-12 pr-12 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500" required />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
-            <Link to="/forgot-password" className="block text-sm text-blue-600 hover:text-blue-700 font-medium">Forgot password?</Link>
-            <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors active:scale-[0.98] disabled:opacity-50">
+            <Link to="/forgot-password" className="block text-sm text-amber-700 hover:text-amber-800 font-medium">Forgot password?</Link>
+            <button type="submit" disabled={loading} className="w-full bg-amber-700 text-white py-3 rounded-xl font-semibold hover:bg-amber-800 transition-colors active:scale-[0.98] disabled:opacity-50">
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
@@ -86,7 +86,7 @@ export function Login() {
           </button>
           <div className="mt-6 text-center">
             <span className="text-sm text-gray-600">Don't have an account? </span>
-            <Link to="/signup" className="text-sm text-blue-600 hover:text-blue-700 font-semibold">Sign Up</Link>
+            <Link to="/signup" className="text-sm text-amber-700 hover:text-amber-800 font-semibold">Sign Up</Link>
           </div>
         </div>
       </motion.div>

@@ -20,10 +20,10 @@ export function BottomNav() {
           return (
             <Link key={tab.id} to={tab.path} className="flex flex-col items-center justify-center gap-1 py-2 px-6 relative no-select">
               {isActive && (
-                <motion.div layoutId="activeTab" className="absolute inset-0 bg-blue-50 rounded-xl" transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }} />
+                <motion.div layoutId="activeTab" className="absolute inset-0 bg-amber-50 rounded-xl" transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }} />
               )}
-              <Icon className={`w-5 h-5 relative z-10 transition-colors ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
-              <span className={`text-xs font-medium relative z-10 transition-colors ${isActive ? 'text-blue-600' : 'text-gray-500'}`}>{tab.label}</span>
+              <Icon className={`w-5 h-5 relative z-10 transition-colors ${isActive ? 'text-amber-700' : 'text-gray-400'}`} />
+              <span className={`text-xs font-medium relative z-10 transition-colors ${isActive ? 'text-amber-700' : 'text-gray-500'}`}>{tab.label}</span>
             </Link>
           );
         })}

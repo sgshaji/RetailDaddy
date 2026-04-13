@@ -26,7 +26,7 @@ export function ForgotPassword() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 flex items-center justify-center p-5">
+      <div className="min-h-screen bg-gradient-to-br from-amber-700 via-amber-800 to-orange-900 flex items-center justify-center p-5">
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md">
           <div className="bg-white rounded-3xl p-8 shadow-2xl text-center">
             <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', delay: 0.2 }} className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -34,7 +34,7 @@ export function ForgotPassword() {
             </motion.div>
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Check your email</h2>
             <p className="text-gray-600 mb-6">We've sent password reset instructions to <span className="font-medium">{email}</span></p>
-            <Link to="/login" className="block w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors text-center">Back to Sign In</Link>
+            <Link to="/login" className="block w-full bg-amber-700 text-white py-3 rounded-xl font-semibold hover:bg-amber-800 transition-colors text-center">Back to Sign In</Link>
           </div>
         </motion.div>
       </div>
@@ -42,14 +42,14 @@ export function ForgotPassword() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 flex items-center justify-center p-5">
+    <div className="min-h-screen bg-gradient-to-br from-amber-700 via-amber-800 to-orange-900 flex items-center justify-center p-5">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
         <div className="text-center mb-8">
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', delay: 0.2 }} className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Store className="w-8 h-8 text-blue-600" />
+            <Store className="w-8 h-8 text-amber-700" />
           </motion.div>
-          <h1 className="text-3xl font-bold text-white mb-2">Retail Manager</h1>
-          <p className="text-blue-100">Reset your password</p>
+          <h1 className="text-3xl font-bold text-white mb-2">Artisans Pottery</h1>
+          <p className="text-amber-200">Reset your password</p>
         </div>
         <div className="bg-white rounded-3xl p-8 shadow-2xl">
           <Link to="/login" className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors">
@@ -63,10 +63,10 @@ export function ForgotPassword() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500" required />
               </div>
             </div>
-            <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors active:scale-[0.98] disabled:opacity-50">
+            <button type="submit" disabled={loading} className="w-full bg-amber-700 text-white py-3 rounded-xl font-semibold hover:bg-amber-800 transition-colors active:scale-[0.98] disabled:opacity-50">
               {loading ? 'Sending...' : 'Send Reset Link'}
             </button>
           </form>
