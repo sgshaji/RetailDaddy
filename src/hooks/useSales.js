@@ -1,41 +1,28 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import * as firestoreService from '../firebase/firestore';
+import { supabase } from '../supabase/client';
+import * as db from '../supabase/database';
 
-export function useSales(dateFilter = null) {
-  const { shopId } = useAuth();
+export function useSales() {
+  const { user } = useAuth();
   const [sales, setSales] = useState([]);
-  const [todaySales, setTodaySales] = useState([]);
 
   useEffect(() => {
-    if (!shopId) return;
-    const unsubscribe = firestoreService.subscribeSales(shopId, setSales, dateFilter);
-    return unsubscribe;
-  }, [shopId, dateFilter]);
+    if (!user) return;
+    db.fetchSales(user.id).then(setSales).catch(console.error);
+    const channel = supabase
+      .channel('sales-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sales', filter: `user_id=eq.${user.id}` }, () => {
+        db.fetchSales(user.id).then(setSales).catch(console.error);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
 
-  // Subscribe to today's sales
-  useEffect(() => {
-    if (!shopId) return;
-    const today = new Date().toISOString().split('T')[0];
-    const unsubscribe = firestoreService.subscribeSales(shopId, setTodaySales, today);
-    return unsubscribe;
-  }, [shopId]);
+  const recordSale = useCallback(async (saleData) => {
+    if (!user) throw new Error('Not authenticated');
+    return db.createSale(user.id, saleData);
+  }, [user]);
 
-  const createSale = useCallback(async (saleData) => {
-    if (!shopId) throw new Error('Not authenticated');
-    return firestoreService.createSale(shopId, saleData);
-  }, [shopId]);
-
-  const deleteSale = useCallback(async (saleId) => {
-    if (!shopId) throw new Error('Not authenticated');
-    return firestoreService.deleteSale(shopId, saleId);
-  }, [shopId]);
-
-  return {
-    sales,
-    todaySales,
-    recentSales: sales.slice(0, 10),
-    createSale,
-    deleteSale
-  };
+  return { sales, recordSale };
 }
