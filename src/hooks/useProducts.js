@@ -1,76 +1,40 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import * as firestoreService from '../firebase/firestore';
+import { supabase } from '../supabase/client';
+import * as db from '../supabase/database';
 
-export function useProducts(filter = {}) {
-  const { shopId } = useAuth();
-  const [allProducts, setAllProducts] = useState([]);
+export function useProducts(searchQuery = '') {
+  const { user } = useAuth();
+  const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    if (!shopId) return;
-    const unsubscribe = firestoreService.subscribeProducts(shopId, setAllProducts);
-    return unsubscribe;
-  }, [shopId]);
+    if (!user) return;
+    db.fetchProducts(user.id).then(setProducts).catch(console.error);
+    const channel = supabase
+      .channel('products-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products', filter: `user_id=eq.${user.id}` }, () => {
+        db.fetchProducts(user.id).then(setProducts).catch(console.error);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
 
-  // Apply client-side filters
-  const products = useMemo(() => {
-    let result = allProducts;
+  const filteredProducts = useMemo(() => {
+    if (!searchQuery) return products;
+    const q = searchQuery.toLowerCase();
+    return products.filter((p) => p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q)));
+  }, [products, searchQuery]);
 
-    if (filter.category && filter.category !== 'All') {
-      result = result.filter(p => p.category === filter.category);
-    }
-
-    if (filter.lowStock) {
-      result = result.filter(p => p.current_stock <= p.low_stock_threshold);
-    }
-
-    if (filter.search) {
-      const searchLower = filter.search.toLowerCase();
-      result = result.filter(p =>
-        p.name.toLowerCase().includes(searchLower) ||
-        (p.barcode && p.barcode.toLowerCase().includes(searchLower))
-      );
-    }
-
-    return result;
-  }, [allProducts, filter.category, filter.lowStock, filter.search]);
+  const lowStockProducts = useMemo(() => products.filter((p) => p.current_stock <= p.low_stock_threshold), [products]);
 
   const addProduct = useCallback(async (product) => {
-    if (!shopId) throw new Error('Not authenticated');
-    return firestoreService.addProduct(shopId, product);
-  }, [shopId]);
+    if (!user) throw new Error('Not authenticated');
+    return db.addProduct(user.id, product);
+  }, [user]);
 
-  const updateProduct = useCallback(async (id, changes) => {
-    if (!shopId) throw new Error('Not authenticated');
-    return firestoreService.updateProduct(shopId, id, changes);
-  }, [shopId]);
+  const updateStock = useCallback(async (productId, newStock) => {
+    return db.updateProductStock(productId, newStock);
+  }, []);
 
-  const deleteProduct = useCallback(async (id) => {
-    if (!shopId) throw new Error('Not authenticated');
-    return firestoreService.deleteProduct(shopId, id);
-  }, [shopId]);
-
-  const getProductById = useCallback(async (id) => {
-    if (!shopId) return null;
-    return firestoreService.getProduct(shopId, id);
-  }, [shopId]);
-
-  const lowStockProducts = useMemo(() => {
-    return allProducts.filter(p => p.current_stock <= p.low_stock_threshold);
-  }, [allProducts]);
-
-  const categories = useMemo(() => {
-    const cats = [...new Set(allProducts.map(p => p.category))];
-    return cats.sort();
-  }, [allProducts]);
-
-  return {
-    products,
-    addProduct,
-    updateProduct,
-    deleteProduct,
-    getProductById,
-    lowStockProducts,
-    categories
-  };
+  return { products: filteredProducts, allProducts: products, lowStockProducts, addProduct, updateStock };
 }

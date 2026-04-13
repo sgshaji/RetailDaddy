@@ -13,6 +13,10 @@ dist-ssr
 dev-dist
 *.local
 
+# Environment variables
+.env
+.env.local
+
 # Android build output
 android/app/build/
 android/.gradle/

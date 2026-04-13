@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">CounterBook</string>
-    <string name="title_activity_main">CounterBook</string>
-    <string name="package_name">com.counterbook.app</string>
-    <string name="custom_url_scheme">com.counterbook.app</string>
+    <string name="app_name">Artisans Pottery</string>
+    <string name="title_activity_main">Artisans Pottery</string>
+    <string name="package_name">com.artisanspottery.app</string>
+    <string name="custom_url_scheme">com.artisanspottery.app</string>
 </resources>

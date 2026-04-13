@@ -1,246 +1,207 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { Search, Plus, AlertTriangle, Package, TrendingDown, ChevronDown, ChevronUp } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Layout } from '../components/layout/Layout';
-import { Card } from '../components/common/Card';
-import { Button } from '../components/common/Button';
-import { Modal } from '../components/common/Modal';
-import { Input } from '../components/common/Input';
+import { ProductCard } from '../components/inventory/ProductCard';
+import { AddItemModal } from '../components/inventory/AddItemModal';
 import { useProducts } from '../hooks/useProducts';
-import { useInventory } from '../hooks/useInventory';
+import { useSales } from '../hooks/useSales';
 import { useToast } from '../components/common/Toast';
 
-export function Inventory() {
-  const [filter, setFilter] = useState('all'); // 'all' or 'low'
-  const [adjustingProduct, setAdjustingProduct] = useState(null);
-  const [adjustmentType, setAdjustmentType] = useState('in'); // 'in', 'out', 'adjust'
-  const [quantity, setQuantity] = useState('');
-  const [reason, setReason] = useState('');
+function formatCurrency(amount) {
+  return `₹${Number(amount).toLocaleString('en-IN')}`;
+}
 
-  const { products, lowStockProducts } = useProducts();
-  const { addStockIn, addStockOut, adjustStock } = useInventory();
+function HealthBar({ healthy, low, out, total }) {
+  if (total === 0) return null;
+  const hPct = (healthy / total) * 100;
+  const lPct = (low / total) * 100;
+  const oPct = (out / total) * 100;
+  return (
+    <div className="flex rounded-full h-2.5 overflow-hidden bg-gray-100">
+      {hPct > 0 && <div className="bg-emerald-500 transition-all" style={{ width: `${hPct}%` }} />}
+      {lPct > 0 && <div className="bg-amber-400 transition-all" style={{ width: `${lPct}%` }} />}
+      {oPct > 0 && <div className="bg-red-400 transition-all" style={{ width: `${oPct}%` }} />}
+    </div>
+  );
+}
+
+function CollapsibleSection({ title, icon, count, severity, defaultOpen, children }) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  const colors = {
+    critical: 'text-red-600 bg-red-50',
+    warning: 'text-amber-700 bg-amber-50',
+    info: 'text-blue-600 bg-blue-50',
+  };
+  return (
+    <div className="mb-4">
+      <button onClick={() => setIsOpen(!isOpen)} className="w-full flex items-center justify-between px-5 py-2">
+        <div className="flex items-center gap-2">
+          <span className={`w-7 h-7 rounded-lg flex items-center justify-center ${colors[severity]}`}>{icon}</span>
+          <span className="text-sm font-semibold text-gray-900">{title}</span>
+          <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${colors[severity]}`}>{count}</span>
+        </div>
+        {isOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+      </button>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+            <div className="px-5 space-y-2 pb-2">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+export function Inventory() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const { products, allProducts, lowStockProducts, addProduct, updateStock } = useProducts(searchQuery);
+  const { sales } = useSales();
   const { showToast } = useToast();
 
-  const displayProducts = filter === 'low' ? lowStockProducts : products;
+  // Calculate velocities
+  const velocities = useMemo(() => {
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const recent = sales.filter(s => new Date(s.created_at) >= thirtyDaysAgo);
+    const map = {};
+    recent.forEach(s => { map[s.product_id] = (map[s.product_id] || 0) + s.quantity; });
+    const result = {};
+    Object.entries(map).forEach(([id, qty]) => { result[id] = qty / 4.3; });
+    return result;
+  }, [sales]);
 
-  const handleAdjustment = async () => {
-    if (!adjustingProduct) return;
+  // Smart sections
+  const outOfStock = allProducts.filter(p => p.current_stock === 0);
+  const reorderNow = allProducts.filter(p => {
+    const v = velocities[p.id] || 0;
+    const daysLeft = v > 0 ? (p.current_stock / v) * 7 : 999;
+    return p.current_stock > 0 && (daysLeft < 7 || p.current_stock <= p.low_stock_threshold);
+  });
+  const deadStock = useMemo(() => {
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const recentProductIds = new Set(sales.filter(s => new Date(s.created_at) >= thirtyDaysAgo).map(s => s.product_id));
+    return allProducts.filter(p => !recentProductIds.has(p.id) && p.current_stock > 0);
+  }, [allProducts, sales]);
 
-    const qty = parseInt(quantity);
-    if (isNaN(qty) || qty <= 0) {
-      showToast('Please enter a valid quantity', 'warning');
-      return;
+  // Categories
+  const categories = useMemo(() => {
+    const cats = [...new Set(allProducts.map(p => p.category).filter(Boolean))].sort();
+    return ['All', ...cats];
+  }, [allProducts]);
+
+  const displayProducts = useMemo(() => {
+    let result = products;
+    if (selectedCategory !== 'All') {
+      result = result.filter(p => p.category === selectedCategory);
     }
+    return result;
+  }, [products, selectedCategory]);
 
-    try {
-      if (adjustmentType === 'in') {
-        await addStockIn(adjustingProduct.id, qty, adjustingProduct.cost_price, reason);
-        showToast(`Added ${qty} ${adjustingProduct.unit} to stock`, 'success');
-      } else if (adjustmentType === 'out') {
-        await addStockOut(adjustingProduct.id, qty, reason);
-        showToast(`Removed ${qty} ${adjustingProduct.unit} from stock`, 'success');
-      } else if (adjustmentType === 'adjust') {
-        await adjustStock(adjustingProduct.id, qty, reason);
-        showToast(`Stock adjusted to ${qty} ${adjustingProduct.unit}`, 'success');
-      }
+  // Inventory value
+  const totalValue = allProducts.reduce((s, p) => s + p.price * p.current_stock, 0);
+  const healthyCount = allProducts.filter(p => p.current_stock > p.low_stock_threshold).length;
 
-      // Reset form
-      setAdjustingProduct(null);
-      setQuantity('');
-      setReason('');
-    } catch (error) {
-      showToast(error.message || 'Failed to adjust stock', 'error');
-    }
+  const handleAddProduct = async (product) => {
+    try { await addProduct(product); showToast('Product added!', 'success'); }
+    catch (err) { showToast(err.message || 'Failed to add product', 'error'); }
+  };
+
+  const handleUpdateStock = async (productId, newStock) => {
+    try { await updateStock(productId, newStock); }
+    catch (err) { showToast(err.message || 'Failed to update stock', 'error'); }
   };
 
   return (
-    <Layout title="Inventory">
-      <div className="flex flex-col h-[calc(100dvh-120px)]">
-        {/* Filter Tabs */}
-        <div className="p-4 bg-white border-b border-gray-200">
-          <div className="flex gap-2">
-            <button
-              onClick={() => setFilter('all')}
-              className={`flex-1 py-3 rounded-lg font-medium transition-colors ${
-                filter === 'all'
-                  ? 'bg-primary-500 text-white'
-                  : 'bg-gray-100 text-gray-700'
-              }`}
-            >
-              All Products
-            </button>
-            <button
-              onClick={() => setFilter('low')}
-              className={`flex-1 py-3 rounded-lg font-medium transition-colors ${
-                filter === 'low'
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-gray-100 text-gray-700'
-              }`}
-            >
-              Low Stock {lowStockProducts && lowStockProducts.length > 0 ? `(${lowStockProducts.length})` : ''}
-            </button>
+    <Layout>
+      <div className="pb-24">
+        <div className="px-5 pt-8 pb-2 flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-amber-900">Inventory</h1>
+            <p className="text-sm text-gray-400 mt-0.5">{allProducts.length} items &bull; {formatCurrency(totalValue)} total value</p>
           </div>
+          <button onClick={() => setIsAddModalOpen(true)} className="w-11 h-11 flex items-center justify-center bg-amber-700 text-white rounded-xl hover:bg-amber-800 transition-colors shadow-md active:scale-95">
+            <Plus className="w-5 h-5" />
+          </button>
         </div>
 
-        {/* Product List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {displayProducts && displayProducts.length > 0 ? (
-            displayProducts.map(product => {
-              const isLowStock = product.current_stock <= product.low_stock_threshold;
+        {/* Health Bar */}
+        {allProducts.length > 0 && (
+          <div className="px-5 mt-4">
+            <HealthBar healthy={healthyCount} low={lowStockProducts.length} out={outOfStock.length} total={allProducts.length} />
+            <div className="flex justify-between mt-2 text-xs text-gray-500">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" />{healthyCount} healthy</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" />{lowStockProducts.length} low</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400" />{outOfStock.length} out</span>
+            </div>
+          </div>
+        )}
 
-              return (
-                <Card key={product.id} className={`p-4 ${isLowStock ? 'border-2 border-orange-300' : ''}`}>
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex-1">
-                      <h3 className="font-bold text-lg text-gray-900">
-                        {product.name}
-                      </h3>
-                      <p className="text-sm text-gray-600">{product.category}</p>
-                    </div>
-                    {isLowStock && (
-                      <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs font-bold rounded">
-                        LOW STOCK
-                      </span>
-                    )}
-                  </div>
+        {/* Smart Sections */}
+        <div className="mt-4">
+          {outOfStock.length > 0 && (
+            <CollapsibleSection title="Out of Stock" icon={<AlertTriangle className="w-4 h-4" />} count={outOfStock.length} severity="critical" defaultOpen>
+              {outOfStock.map((p, i) => (
+                <ProductCard key={p.id} product={p} index={i} onUpdateStock={handleUpdateStock} velocity={velocities[p.id]} />
+              ))}
+            </CollapsibleSection>
+          )}
+          {reorderNow.length > 0 && (
+            <CollapsibleSection title="Reorder Soon" icon={<Package className="w-4 h-4" />} count={reorderNow.length} severity="warning" defaultOpen={outOfStock.length === 0}>
+              {reorderNow.map((p, i) => (
+                <ProductCard key={p.id} product={p} index={i} onUpdateStock={handleUpdateStock} velocity={velocities[p.id]} />
+              ))}
+            </CollapsibleSection>
+          )}
+          {deadStock.length > 0 && (
+            <CollapsibleSection title="Slow Movers (30+ days)" icon={<TrendingDown className="w-4 h-4" />} count={deadStock.length} severity="info" defaultOpen={false}>
+              {deadStock.map((p, i) => (
+                <ProductCard key={p.id} product={p} index={i} onUpdateStock={handleUpdateStock} velocity={0} />
+              ))}
+            </CollapsibleSection>
+          )}
+        </div>
 
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-500">Current Stock</p>
-                      <p className={`text-2xl font-bold ${
-                        isLowStock ? 'text-orange-600' : 'text-gray-900'
-                      }`}>
-                        {product.current_stock} {product.unit}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Alert at: {product.low_stock_threshold} {product.unit}
-                      </p>
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                      <button
-                        onClick={() => {
-                          setAdjustingProduct(product);
-                          setAdjustmentType('in');
-                          setQuantity('');
-                          setReason('');
-                        }}
-                        className="px-4 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 active:scale-95"
-                      >
-                        + Add Stock
-                      </button>
-                      <button
-                        onClick={() => {
-                          setAdjustingProduct(product);
-                          setAdjustmentType('out');
-                          setQuantity('');
-                          setReason('');
-                        }}
-                        className="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 active:scale-95"
-                      >
-                        − Remove
-                      </button>
-                    </div>
-                  </div>
-                </Card>
-              );
-            })
-          ) : (
-            <div className="text-center text-gray-500 mt-8">
-              <p className="text-6xl mb-4">📋</p>
-              <p className="text-lg font-medium">
-                {filter === 'low' ? 'No low stock items' : 'No products found'}
-              </p>
+        {/* Search + Category Filter */}
+        <div className="px-5 mt-2 space-y-3">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input type="text" placeholder="Search products..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+          </div>
+          {categories.length > 2 && (
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1">
+              {categories.map(cat => (
+                <button key={cat} onClick={() => setSelectedCategory(cat)} className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${selectedCategory === cat ? 'bg-amber-700 text-white' : 'bg-white border border-gray-200 text-gray-600'}`}>
+                  {cat}
+                </button>
+              ))}
             </div>
           )}
         </div>
+
+        {/* All Products */}
+        <div className="px-5 mt-4">
+          <h2 className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-3">
+            {selectedCategory === 'All' ? 'All Products' : selectedCategory}
+          </h2>
+          <div className="space-y-2">
+            {displayProducts.map((product, index) => (
+              <ProductCard key={product.id} product={product} index={index} onUpdateStock={handleUpdateStock} velocity={velocities[product.id]} />
+            ))}
+          </div>
+          {displayProducts.length === 0 && (
+            <div className="text-center py-8">
+              <p className="text-sm text-gray-400">{allProducts.length === 0 ? 'Your shelves are bare — add your first creation!' : 'No products match your search'}</p>
+            </div>
+          )}
+        </div>
+
+        <AddItemModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onAdd={handleAddProduct} />
       </div>
-
-      {/* Stock Adjustment Modal */}
-      <Modal
-        isOpen={!!adjustingProduct}
-        onClose={() => setAdjustingProduct(null)}
-        title={`${adjustmentType === 'in' ? 'Add' : adjustmentType === 'out' ? 'Remove' : 'Adjust'} Stock`}
-        footer={
-          <div className="flex gap-3">
-            <Button
-              variant="secondary"
-              onClick={() => setAdjustingProduct(null)}
-              fullWidth
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleAdjustment}
-              fullWidth
-            >
-              Confirm
-            </Button>
-          </div>
-        }
-      >
-        {adjustingProduct && (
-          <div className="space-y-4">
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <p className="text-sm text-gray-600">Product</p>
-              <p className="font-bold text-lg">{adjustingProduct.name}</p>
-              <p className="text-sm text-gray-600 mt-2">
-                Current Stock: <span className="font-bold">{adjustingProduct.current_stock} {adjustingProduct.unit}</span>
-              </p>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => setAdjustmentType('in')}
-                className={`flex-1 py-2 rounded-lg font-medium ${
-                  adjustmentType === 'in'
-                    ? 'bg-green-500 text-white'
-                    : 'bg-gray-100 text-gray-700'
-                }`}
-              >
-                Add Stock
-              </button>
-              <button
-                onClick={() => setAdjustmentType('out')}
-                className={`flex-1 py-2 rounded-lg font-medium ${
-                  adjustmentType === 'out'
-                    ? 'bg-orange-500 text-white'
-                    : 'bg-gray-100 text-gray-700'
-                }`}
-              >
-                Remove
-              </button>
-              <button
-                onClick={() => setAdjustmentType('adjust')}
-                className={`flex-1 py-2 rounded-lg font-medium ${
-                  adjustmentType === 'adjust'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-700'
-                }`}
-              >
-                Set Amount
-              </button>
-            </div>
-
-            <Input
-              label={adjustmentType === 'adjust' ? 'New Stock Amount' : 'Quantity'}
-              type="number"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              placeholder="Enter quantity"
-              min="0"
-              required
-            />
-
-            <Input
-              label="Reason (Optional)"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="e.g., New delivery, Damaged goods, etc."
-            />
-
-          </div>
-        )}
-      </Modal>
     </Layout>
   );
 }

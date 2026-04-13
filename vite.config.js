@@ -10,10 +10,10 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'icons/*.png'],
       manifest: {
-        name: 'CounterBook',
-        short_name: 'CounterBook',
-        description: 'Your digital billing counter ledger — track sales, inventory, and profits on the go',
-        theme_color: '#10b981',
+        name: 'Artisans Pottery',
+        short_name: 'Artisans Pottery',
+        description: 'Handcrafted inventory and sales management for your pottery shop',
+        theme_color: '#b45309',
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
@@ -33,16 +33,7 @@ export default defineConfig({
             purpose: 'any maskable'
           }
         ],
-        categories: ['business', 'productivity', 'utilities'],
-        shortcuts: [
-          {
-            name: 'Quick Sale',
-            short_name: 'Sale',
-            description: 'Record a new sale',
-            url: '/quick-sale',
-            icons: [{ src: 'icons/icon-96x96.png', sizes: '96x96' }]
-          }
-        ]
+        categories: ['business', 'productivity', 'utilities']
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
