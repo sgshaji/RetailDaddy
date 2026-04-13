@@ -31,16 +31,16 @@ export function AddItemModal({ isOpen, onClose, onAdd }) {
             <form onSubmit={handleSubmit} className="p-5 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Product Name</label>
-                <input type="text" value={formData.name} onChange={update('name')} placeholder="Enter product name" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                <input type="text" value={formData.name} onChange={update('name')} placeholder="Enter product name" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500" required />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">SKU</label>
-                  <input type="text" value={formData.sku} onChange={update('sku')} placeholder="ABC-001" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <input type="text" value={formData.sku} onChange={update('sku')} placeholder="ABC-001" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                  <select value={formData.category} onChange={update('category')} className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <select value={formData.category} onChange={update('category')} className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500">
                     <option value="General">General</option><option value="Coffee">Coffee</option><option value="Tea">Tea</option><option value="Equipment">Equipment</option><option value="Accessories">Accessories</option>
                   </select>
                 </div>
@@ -48,26 +48,26 @@ export function AddItemModal({ isOpen, onClose, onAdd }) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Selling Price (₹)</label>
-                  <input type="number" step="0.01" value={formData.price} onChange={update('price')} placeholder="0.00" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                  <input type="number" step="0.01" value={formData.price} onChange={update('price')} placeholder="0.00" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500" required />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Cost Price (₹)</label>
-                  <input type="number" step="0.01" value={formData.cost_price} onChange={update('cost_price')} placeholder="0.00" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <input type="number" step="0.01" value={formData.cost_price} onChange={update('cost_price')} placeholder="0.00" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Initial Stock</label>
-                  <input type="number" value={formData.stock} onChange={update('stock')} placeholder="0" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                  <input type="number" value={formData.stock} onChange={update('stock')} placeholder="0" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500" required />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Low Stock Alert</label>
-                  <input type="number" value={formData.lowStockThreshold} onChange={update('lowStockThreshold')} placeholder="10" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <input type="number" value={formData.lowStockThreshold} onChange={update('lowStockThreshold')} placeholder="10" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500" />
                 </div>
               </div>
               <div className="flex gap-3 pt-4">
                 <button type="button" onClick={onClose} className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors">Cancel</button>
-                <button type="submit" className="flex-1 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors">Add Item</button>
+                <button type="submit" className="flex-1 py-3 rounded-xl bg-amber-700 text-white font-semibold hover:bg-amber-800 transition-colors">Add Item</button>
               </div>
             </form>
           </motion.div>

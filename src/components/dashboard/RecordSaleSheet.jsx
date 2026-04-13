@@ -108,7 +108,7 @@ export function RecordSaleSheet({ products, onRecordSale }) {
       {/* FAB */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-24 right-4 z-30 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-lg shadow-blue-600/30 flex items-center justify-center active:scale-90 transition-all"
+        className="fixed bottom-24 right-4 z-30 w-14 h-14 bg-amber-700 hover:bg-amber-800 text-white rounded-2xl shadow-lg shadow-amber-700/30 flex items-center justify-center active:scale-90 transition-all"
       >
         <Plus className="w-6 h-6" />
       </button>
@@ -159,7 +159,7 @@ export function RecordSaleSheet({ products, onRecordSale }) {
                     value={saleDate}
                     max={todayStr()}
                     onChange={(e) => setSaleDate(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
                   />
                 </div>
 
@@ -173,7 +173,7 @@ export function RecordSaleSheet({ products, onRecordSale }) {
                       placeholder="Search and add products..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                     />
                   </div>
 
@@ -195,11 +195,11 @@ export function RecordSaleSheet({ products, onRecordSale }) {
                               </div>
                             </div>
                             {inCart ? (
-                              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                              <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">
                                 {inCart.quantity} in cart
                               </span>
                             ) : (
-                              <Plus className="w-5 h-5 text-blue-600" />
+                              <Plus className="w-5 h-5 text-amber-700" />
                             )}
                           </button>
                         );
@@ -245,7 +245,7 @@ export function RecordSaleSheet({ products, onRecordSale }) {
                             <button
                               onClick={() => updateCartQty(item.product_id, item.quantity + 1)}
                               disabled={item.quantity >= item.max_stock}
-                              className="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-600 text-white active:scale-95 disabled:opacity-30"
+                              className="w-8 h-8 flex items-center justify-center rounded-lg bg-amber-700 text-white active:scale-95 disabled:opacity-30"
                             >
                               <Plus className="w-3 h-3" />
                             </button>
@@ -283,7 +283,7 @@ export function RecordSaleSheet({ products, onRecordSale }) {
                     <button
                       onClick={handleCompleteSale}
                       disabled={isProcessing || cart.length === 0}
-                      className="w-full mt-4 py-3.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 active:scale-[0.98]"
+                      className="w-full mt-4 py-3.5 rounded-xl bg-amber-700 text-white font-semibold hover:bg-amber-800 transition-colors disabled:opacity-50 active:scale-[0.98]"
                     >
                       {isProcessing ? 'Processing...' : `Complete Sale \u2022 ${formatCurrency(cartTotal)}`}
                     </button>

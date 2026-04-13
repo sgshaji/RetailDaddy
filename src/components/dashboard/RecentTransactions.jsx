@@ -12,7 +12,7 @@ export function RecentTransactions({ transactions }) {
     return (
       <div className="px-5 mt-8">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Transactions</h2>
-        <p className="text-sm text-gray-400 text-center py-8">No sales recorded yet</p>
+        <p className="text-sm text-gray-400 text-center py-8">No transactions yet — the kiln is warming up!</p>
       </div>
     );
   }
