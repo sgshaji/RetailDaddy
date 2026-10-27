@@ -1,53 +1,75 @@
-# Retail Shop Manager - Mobile-First PWA
+# RetailDaddy
 
-A Progressive Web App (PWA) designed for small retail shop owners to manage their business on mobile devices with one-handed operation.
+**Mobile-first retail operations: products, sales, stock, and daily visibility.**
 
-## Features
+A React application for small retail workflows, with a Supabase-backed product
+catalogue, sales recording, inventory views, and sales insights. The interface
+prioritises touch-friendly interactions and a small set of everyday shop tasks.
 
-### 📊 Dashboard
-- Today's sales and profit at a glance
-- Transaction count
-- Low stock alerts
-- Top selling products
+## Workflow
 
-### 💰 Quick Sale (Primary Feature)
-- Fast product selection with search
-- Large touch-friendly quantity controls (+/- buttons)
-- Real-time total calculation
-- Automatic inventory updates
-- Designed for < 10 second transaction flow
+1. Sign in.
+2. Add products and opening stock.
+3. Record a sale against a product.
+4. Review stock and dashboard or sales-insight views.
 
-### 📦 Products Management
-- Add, edit, and delete products
-- Category-based organization
-- Search and filter functionality
+## Implementation
 
-### 📋 Inventory Management
-- View all products and stock levels
-- Quick stock in/out adjustments
-- Low stock filtering
+| Layer | Current implementation |
+|---|---|
+| Interface | React 19, React Router, Tailwind CSS, Framer Motion |
+| Data and authentication | Supabase |
+| Sales visualisation | Recharts |
+| Build and PWA configuration | Vite 7 and `vite-plugin-pwa` |
+| Android project | Capacitor project in `android/` |
 
-### 📈 Insights & Analytics
-- 7-day sales trends
-- Daily breakdown
-- Top products by revenue
+**Inspect the work:** [screens](src/screens/), [data access](src/supabase/),
+[workflow hooks](src/hooks/), and [Supabase schema/migrations](supabase/).
 
-## Getting Started
+## Local setup
 
-### Installation
-\`\`\`bash
-npm install
+You need Node.js compatible with the project's Vite version, npm, and a Supabase
+project. See [package.json](package.json) for the actual dependency versions.
+
+```bash
+git clone https://github.com/sgshaji/RetailDaddy.git
+cd RetailDaddy
+npm ci
+```
+
+Copy `.env.example` to `.env` and set your project's URL and public client key:
+
+```dotenv
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-public-anon-key
+```
+
+Apply the relevant SQL from [supabase/](supabase/) to your own project and review
+its access policies before using real data. Then start the app:
+
+```bash
 npm run dev
-\`\`\`
+```
 
-### Build for Production
-\`\`\`bash
-npm run build
-\`\`\`
+`VITE_` variables are included in browser code. Never put a Supabase service-role
+key or another server secret in them.
 
-## Technology Stack
-- React 18 + Vite
-- Tailwind CSS
-- IndexedDB with Dexie.js
-- React Router
-- PWA with Vite Plugin
+## Commands
+
+| Command | Purpose |
+|---|---|
+| `npm run dev` | Local development server |
+| `npm run build` | Production frontend build |
+| `npm run preview` | Preview the built frontend |
+| `npm run lint` | Existing ESLint checks |
+
+## Scope and verification
+
+This is an application implementation, not a claim of production adoption or a
+measured checkout-time improvement. Build, lint, browser workflows, and Android
+packaging were not rerun for this documentation refresh.
+
+The current data layer uses Supabase, not the IndexedDB/Dexie stack described in
+the earlier README. PWA configuration does not establish offline transactional
+support: verify connectivity behaviour, data isolation, stock consistency,
+and recovery before relying on the application for shop operations.
